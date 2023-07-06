@@ -1,0 +1,47 @@
+---
+title: "NFL Spread: fit"
+author: "Nick Grant"
+editor: source
+format: html
+execute: 
+  echo: true
+  warning: false
+---
+
+```{r}
+library(tidyverse)
+library(rstanarm)
+```
+
+Data files
+
+```{r}
+list_of_files <- list.files(path = "data",
+                            recursive = TRUE,
+                            pattern = "\\.csv$",
+                            full.names = TRUE)  
+```
+
+Import data
+
+```{r}
+x <- read_csv(list_of_files, id = "file_name", show_col_types = FALSE) |> 
+  janitor::clean_names() |> 
+  mutate(date = as.Date(date, "%m/%d/%Y"),
+         betting_line = line) |> 
+  mutate(score_line = home_score - visitor_score) |> 
+  mutate(diff_line = abs(score_line - betting_line)) |> 
+  select(- total_line)
+```
+
+Difference between game scores (score_line)) and spread (betting_line).
+
+```{r}
+obj_fit <- stan_glm(data = x,
+         formula = betting_line ~ diff_line,
+         family = gaussian,
+         refresh = 0,
+         seed = 9)
+
+obj_fit
+```
